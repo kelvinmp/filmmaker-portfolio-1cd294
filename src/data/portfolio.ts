@@ -421,6 +421,7 @@ export const services = [
 ]
 
 /** Serve originals through the Netlify Image CDN, resized and converted to WebP. */
+/** Devuelve la ruta de la imagen directamente para compatibilidad total */
 export function img(src: string, w: number) {
-  return `/.netlify/images?url=${encodeURIComponent(src)}&w=${w}&fm=webp&q=72`
+  return src
 }
