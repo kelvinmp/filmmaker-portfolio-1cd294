@@ -27,3 +27,5 @@ netlify dev   # or: pnpm dev
 ```
 
 Form submissions only work on a deployed Netlify site (or under `netlify dev`).
+
+[![Netlify Status](https://api.netlify.com/api/v1/badges/e898d308-f9d5-4858-89cd-90b35d6f1081/deploy-status)](https://app.netlify.com/projects/filmmaker-portfolio-1cd294/deploys)
