@@ -4,6 +4,7 @@ import { ArrowDownRight, ArrowUpRight, Eye, Mail, Play } from 'lucide-react'
 
 import {
   categories,
+  fotos,
   img,
   marquee,
   profile,
@@ -23,11 +24,24 @@ export const Route = createFileRoute('/')({
   component: Home,
 })
 
+// Adaptamos "fotos" al formato Reel globalmente para usarlo en el Hero y en la galería
+const photoReels: Reel[] = fotos.map((f, idx) => ({
+  id: `${f.id}-${idx}`,
+  title: f.title,
+  brand: 'Fotografía',
+  category: [],      // 👈 Lo dejamos vacío
+  hook: f.hook || f.title,
+  poster: f.src,
+  views: '',         // 👈 Lo dejamos vacío
+  retention: '',     // 👈 Lo dejamos vacío
+  duration: 5,
+}))
+
 function Home() {
   const [filter, setFilter] = useState<(typeof categories)[number]>('Todo')
   const [player, setPlayer] = useState<{ list: Reel[]; index: number } | null>(null)
   const visible = useMemo(
-    () => (filter === 'Todo' ? reels : reels.filter((r) => r.category === filter)),
+    () => (filter === 'Todo' ? reels : reels.filter((r) => r.category.includes(filter))),
     [filter],
   )
 
@@ -36,16 +50,16 @@ function Home() {
       <div className="grain" aria-hidden />
       <Nav />
 
-      <Hero onOpen={(index) => setPlayer({ list: reels, index })} />
+      <Hero onOpen={(list, index) => setPlayer({ list, index })} />
       <Marquee />
 
-      {/* ---------- THE FEED ---------- */}
+      {/* ---------- THE FEED (VIDEOS) ---------- */}
       <section id="reels" className="mx-auto max-w-7xl px-5 pb-32 pt-24 md:px-10">
         <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">● Trabajo seleccionado</p>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">● Trabajo destacado</p>
             <h2 className="mt-3 font-display text-[clamp(3.5rem,11vw,9rem)] uppercase leading-[0.85]">
-              El feed
+              audiovisual
             </h2>
           </div>
           <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 md:mx-0 md:px-0">
@@ -71,9 +85,10 @@ function Home() {
         <div className="mt-14 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
           {visible.map((reel, i) => (
             <ReelCard
-              key={reel.id}
+              key={`${reel.id}-${i}`}
               reel={reel}
               index={i}
+              isPlayerOpen={!!player} // <-- 1. Agrega esta línea
               onOpen={() => setPlayer({ list: visible, index: i })}
             />
           ))}
@@ -81,6 +96,39 @@ function Home() {
         <p className="mt-24 text-center font-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
           Toca cualquier reel y sigue deslizando
         </p>
+      </section>
+
+      {/* ---------- SECCIÓN DE FOTOS ---------- */}
+      <section id="fotos" className="mx-auto max-w-7xl px-5 pb-32 pt-10 md:px-10">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">● Trabajo fotográfico</p>
+          <h2 className="mt-3 font-display text-[clamp(3.5rem,11vw,9rem)] uppercase leading-[0.85]">
+            Fotografía
+          </h2>
+        </div>
+
+        <div className="mt-14 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+          {fotos.map((foto, i) => (
+            <button
+              key={`${foto.id}-${i}`}
+              type="button"
+              onClick={() => setPlayer({ list: photoReels, index: i })}
+              aria-label={`Ver foto ${foto.title}`}
+              className="group relative aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-2xl bg-card text-left"
+            >
+              <img
+                src={img(foto.src, 700)}
+                alt={foto.title}
+                loading="lazy"
+                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+              <p className="absolute bottom-4 left-4 font-display text-xl uppercase text-white opacity-0 transition group-hover:opacity-100">
+                {foto.title}
+              </p>
+            </button>
+          ))}
+        </div>
       </section>
 
       <Stats />
@@ -115,7 +163,7 @@ function Nav() {
         </a>
         <nav className="flex items-center gap-3 text-sm font-semibold text-white">
           <a
-            href={`https://wa.me/${profile.whatsapp}`}
+            href={`https://wa.me/${profile.whatsapp}?text=${encodeURIComponent('¡Hola Giovanni! Vi tu portafolio y me gustaría hablar sobre un proyecto.')}`}
             target="_blank"
             rel="noreferrer"
             aria-label="Escríbeme por WhatsApp"
@@ -132,8 +180,9 @@ function Nav() {
   )
 }
 
-function Hero({ onOpen }: { onOpen: (i: number) => void }) {
-  const lines = ['Hagamos', 'arte.']
+function Hero({ onOpen }: { onOpen: (list: Reel[], i: number) => void }) {
+  const lines = ['¡Hagamos', 'arte!']
+
   return (
     <section id="top" className="relative min-h-[100svh] overflow-hidden pt-24">
       <img
@@ -166,8 +215,7 @@ function Hero({ onOpen }: { onOpen: (i: number) => void }) {
             className="fade-up mt-8 max-w-md text-lg text-white/75 md:text-xl"
             style={{ animationDelay: '0.4s' }}
           >
-            Video corto para marcas que necesitan ganar los primeros 3 segundos. Anuncios UGC, films de marca
-            y packs de contenido: escritos, grabados y editados por una sola persona.
+            Creación de Contenido para Marcas, Tiendas, Negocios con fotografía y videografía cinematográfica. Estrategias, paquetes y cronogramas de contenido personalizado para cada marca.
           </p>
           <div className="fade-up mt-10 flex flex-wrap gap-3" style={{ animationDelay: '0.5s' }}>
             <a
@@ -183,7 +231,7 @@ function Hero({ onOpen }: { onOpen: (i: number) => void }) {
         </div>
 
         <div className="fade-up flex justify-center md:justify-end" style={{ animationDelay: '0.2s' }}>
-          <HeroPhone reels={reels} onOpen={onOpen} />
+          <HeroPhone reels={photoReels} onOpen={(index) => onOpen(photoReels, index)} />
         </div>
       </div>
     </section>
@@ -205,7 +253,17 @@ function Marquee() {
   )
 }
 
-function ReelCard({ reel, index, onOpen }: { reel: Reel; index: number; onOpen: () => void }) {
+function ReelCard({ 
+  reel, 
+  index, 
+  isPlayerOpen, 
+  onOpen 
+}: { 
+  reel: Reel; 
+  index: number; 
+  isPlayerOpen: boolean; 
+  onOpen: () => void 
+}) {
   const reveal = useReveal<HTMLButtonElement>()
   return (
     <button
@@ -221,12 +279,17 @@ function ReelCard({ reel, index, onOpen }: { reel: Reel; index: number; onOpen: 
       style={{ transitionDelay: `${(index % 4) * 80}ms` }}
     >
       <div className="absolute inset-0 transition duration-700 group-hover:scale-105">
-        <ReelMedia reel={reel} width={500} active={reveal.inView} />
+        {/* 3. Cambia active para que se pause si el player está abierto */}
+        <ReelMedia 
+          reel={reel} 
+          width={500} 
+          active={reveal.inView && !isPlayerOpen} 
+        />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/40 transition group-hover:via-black/30" />
-
       <div className="absolute left-3 right-3 top-3 flex items-center justify-between font-mono text-[10px] uppercase tracking-widest text-white/80">
-        <span className="rounded-full bg-black/40 px-2 py-1 backdrop-blur">{reel.category}</span>
+        <span className="rounded-full bg-black/40 px-2 py-1 backdrop-blur">
+          {reel.category.join(' · ')}
+        </span>
         <span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 backdrop-blur">
           <Eye className="size-3" /> {reel.views}
         </span>
@@ -255,22 +318,23 @@ function ReelCard({ reel, index, onOpen }: { reel: Reel; index: number; onOpen: 
 function Stats() {
   return (
     <section className="border-y border-border bg-card">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-4">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 md:grid-cols-5">
         {stats.map((s, i) => (
           <div
             key={s.label}
             className={cn(
-              'border-border px-5 py-12 md:px-10 md:py-16',
-              i % 2 === 0 && 'border-r',
-              i < 2 && 'border-b md:border-b-0',
-              i === 1 && 'md:border-r',
-              i === 2 && 'md:border-r',
+              'border-border px-4 py-12 lg:px-8 md:py-16',
+              i % 2 === 0 ? 'border-r md:border-r-0' : '',
+              i < 4 ? 'border-b md:border-b-0' : '',
+              i < 4 ? 'md:border-r' : '',
             )}
           >
-            <p className="font-display text-[clamp(3rem,8vw,6rem)] leading-none text-primary">
+            <p className="font-display text-[clamp(2.5rem,6vw,5rem)] leading-none text-primary">
               <CountUp value={s.value} suffix={s.suffix} />
             </p>
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">{s.label}</p>
+            <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground lg:text-[11px]">
+              {s.label}
+            </p>
           </div>
         ))}
       </div>
@@ -287,19 +351,19 @@ function About() {
           <div className="absolute -inset-3 -rotate-3 rounded-[2rem] border-2 border-primary" />
           <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem]">
             <img
-              src={img('/img/hero.png', 700)}
+              src={img('/img/giovanni.jpg', 700)}
               alt={`${profile.name} detrás de cámara`}
               loading="lazy"
               className="h-full w-full object-cover"
             />
           </div>
           <span className="absolute -bottom-5 -right-3 rotate-6 rounded-full bg-rec px-4 py-2 font-mono text-xs uppercase tracking-widest text-white">
-            ● Detrás de cámara
+            ● Detrás de escena
           </span>
         </div>
         <div>
           <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">● Sobre mí</p>
-          <h2 className="mt-4 font-display text-[clamp(3rem,7vw,6rem)] uppercase leading-[0.9]">
+          <h2 className="mt-4 font-display text-[clamp(3rem,7vw,6rem)] uppercase leading-[1.2]">
             {profile.bioTitle}
           </h2>
           <div className="mt-8 space-y-5 text-lg leading-relaxed text-white/75 md:text-xl">
@@ -308,7 +372,7 @@ function About() {
             ))}
           </div>
           <div className="mt-10 flex flex-wrap gap-2">
-            {['Guion', 'Dirección', 'Cámara', 'Actuación', 'Edición', 'Color'].map((t) => (
+            {['Guion', 'Dirección', 'Cámara', 'Imagen de Marca', 'Edición', 'Color'].map((t) => (
               <span key={t} className="rounded-full border border-white/15 px-4 py-1.5 text-sm">
                 {t}
               </span>
@@ -345,18 +409,24 @@ function Services() {
 
 function Contact() {
   return (
-    <section id="book" className="relative overflow-hidden border-t border-border bg-card">
-      <div className="mx-auto grid max-w-7xl gap-16 px-5 py-28 md:grid-cols-2 md:px-10">
+    <section id="book" className="relative overflow-hidden border-t border-border bg-[#111111]">
+      <div className="mx-auto grid max-w-7xl gap-16 px-5 py-28 md:grid-cols-2 md:px-10 md:gap-24">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">● Agenda abierta</p>
-          <h2 className="mt-4 font-display text-[clamp(3.5rem,9vw,8rem)] uppercase leading-[0.85]">
-            Tus 3 segundos empiezan <span className="text-primary">aquí.</span>
+          <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">
+            ● Cotiza tu Proyecto
+          </p>
+          <h2 className="mt-4 font-display text-[clamp(3.5rem,7vw,7rem)] uppercase leading-[0.95] text-white">
+            Comencemos <br /> a crear <br />
+            <span className="text-primary">juntos.</span>
           </h2>
           <p className="mt-8 max-w-md text-lg text-white/70">
-            Cuéntame del producto y de tu audiencia. Te respondo con ganchos, no con una presentación.
+            Hablemos de tus objetivos, la inversión en este negocio y cómo podemos lograrlo.
           </p>
-          <div className="mt-10 space-y-3">
-            <a href={`mailto:${profile.email}`} className="block font-display text-3xl uppercase hover:text-primary">
+          <div className="mt-12 space-y-4">
+            <a 
+              href={`mailto:${profile.email}`} 
+              className="block font-display text-2xl md:text-3xl uppercase text-white hover:text-primary transition-colors"
+            >
               {profile.email}
             </a>
             <div className="flex gap-4">
@@ -366,7 +436,7 @@ function Contact() {
                   href={s.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1 text-sm font-semibold text-white/70 hover:text-white"
+                  className="flex items-center gap-1 text-sm font-semibold text-white/50 hover:text-white transition-colors"
                 >
                   {s.label} <ArrowUpRight className="size-3.5" />
                 </a>
@@ -374,19 +444,25 @@ function Contact() {
             </div>
           </div>
         </div>
+        
+        {/* Aquí va el formulario */}
         <BookingForm />
       </div>
     </section>
   )
+  
 }
 
 function Footer() {
   return (
-    <footer className="overflow-hidden border-t border-border">
-      <p className="select-none whitespace-nowrap py-6 text-center font-display text-[18vw] uppercase leading-none text-white/[0.04]">
-        {profile.name}
-      </p>
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-5 pb-8 font-mono text-[11px] uppercase tracking-widest text-muted-foreground md:flex-row md:px-10">
+    <footer className="relative overflow-hidden border-t border-border bg-[#111111]">
+      <div className="relative flex w-full items-center justify-center overflow-hidden">
+        <p className="select-none whitespace-nowrap py-10 text-center font-display text-[clamp(4rem,16vw,26rem)] uppercase leading-none text-white/[0.04]">
+          {profile.name}
+        </p>
+      </div>
+      
+      <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 pb-8 font-mono text-[11px] uppercase tracking-widest text-white/40 md:flex-row md:px-10">
         <span>
           © {new Date().getFullYear()} {profile.name}
         </span>

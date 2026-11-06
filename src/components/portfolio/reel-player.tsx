@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, Eye, Pause, Play, X } from 'lucide-react'
+// 👇 Agregamos Volume2 y VolumeX a los íconos
+import { ChevronDown, ChevronUp, Eye, Pause, Play, X, Volume2, VolumeX } from 'lucide-react'
 
 import type { Reel } from '@/data/portfolio'
 import { profile } from '@/data/portfolio'
@@ -17,6 +18,8 @@ export function ReelPlayer({ reels, startIndex, onClose }: Props) {
   const [progress, setProgress] = useState(0)
   const progressRef = useRef(0)
   const [paused, setPaused] = useState(false)
+  const [isMuted, setIsMuted] = useState(true) // 👈 NUEVO ESTADO: Inicia silenciado
+  
   const holdTimer = useRef<number | null>(null)
   const held = useRef(false)
   const downAt = useRef<{ x: number; y: number } | null>(null)
@@ -145,6 +148,7 @@ export function ReelPlayer({ reels, startIndex, onClose }: Props) {
             reel={reel}
             width={900}
             eager
+            muted={isMuted} // 👈 Le pasamos el estado del sonido
             className={paused ? '[animation-play-state:paused]' : undefined}
             onTimeUpdate={(e) => {
               const v = e.currentTarget
@@ -177,6 +181,16 @@ export function ReelPlayer({ reels, startIndex, onClose }: Props) {
             {String(index + 1).padStart(2, '0')}/{String(reels.length).padStart(2, '0')}
           </div>
           <div className="flex gap-2">
+            {/* 👇 NUEVO BOTÓN DE SILENCIO */}
+            <button
+              type="button"
+              onClick={() => setIsMuted((m) => !m)}
+              aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}
+              className="grid size-9 place-items-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20"
+            >
+              {isMuted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+            </button>
+
             <button
               type="button"
               onClick={() => setPaused((p) => !p)}
@@ -196,27 +210,26 @@ export function ReelPlayer({ reels, startIndex, onClose }: Props) {
           </div>
         </div>
 
-        {/* hook caption — big, like the real thing */}
-        <div key={`hook-${reel.id}`} className="pointer-events-none absolute inset-x-6 top-[22%] text-center">
-          <div className="inline-block -rotate-2">
-            <p className="fade-up bg-primary px-3 py-1 font-display text-3xl uppercase leading-none text-primary-foreground sm:text-4xl">
-              {reel.hook}
-            </p>
-          </div>
-        </div>
 
         <div key={`meta-${reel.id}`} className="fade-up pointer-events-none absolute inset-x-5 bottom-6">
           <p className="text-sm font-semibold text-white/80">{profile.handle}</p>
           <h3 className="mt-1 font-display text-4xl uppercase leading-[0.95] text-white">{reel.title}</h3>
+          
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-white px-2.5 py-1 font-semibold text-black">{reel.brand}</span>
-            <span className="rounded-full border border-white/30 px-2.5 py-1 text-white/90">{reel.category}</span>
-            <span className="flex items-center gap-1 rounded-full border border-white/30 px-2.5 py-1 text-white/90">
-              <Eye className="size-3" /> {reel.views}
-            </span>
-            <span className="rounded-full border border-primary/60 px-2.5 py-1 text-primary">
-              {reel.retention} retención a 3s
-            </span>
+            <span className="rounded-full bg-primary/100 px-2.5 py-1 font-bold text-black">{reel.brand}</span>
+            
+            {reel.video && (
+              <>
+                <span className="rounded-full border border-white/30 px-2.5 py-1 text-white/90">
+                  {reel.category.join(' · ')}
+                </span>
+                <span className="flex items-center gap-1 rounded-full border border-white/30 px-2.5 py-1 text-white/90">
+                  <Eye className="size-3" /> {reel.views}
+                </span>
+                
+              </>
+            )}
+            
           </div>
         </div>
 

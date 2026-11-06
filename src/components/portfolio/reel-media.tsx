@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useEffect, useRef } from 'react'
 
 import { img, type Reel } from '@/data/portfolio'
 import { cn } from '@/lib/utils'
@@ -7,6 +7,7 @@ type Props = {
   reel: Reel
   width: number
   active?: boolean
+  muted?: boolean // 👈 NUEVA PROPIEDAD
   className?: string
   eager?: boolean
   onTimeUpdate?: React.ReactEventHandler<HTMLVideoElement>
@@ -18,18 +19,38 @@ type Props = {
  * poster with a slow push-in so every card feels like footage.
  */
 export const ReelMedia = forwardRef<HTMLVideoElement, Props>(function ReelMedia(
-  { reel, width, active = true, className, eager, onTimeUpdate, onEnded },
-  ref,
+  { reel, width, active = true, muted = true, className, eager, onTimeUpdate, onEnded }, // 👈 Agregamos muted = true aquí
+  forwardedRef,
 ) {
   const poster = img(reel.poster, width)
+  const internalRef = useRef<HTMLVideoElement | null>(null)
+
+  // Obligamos al video a reproducirse o pausarse cuando entra/sale de la pantalla
+  useEffect(() => {
+    const video = internalRef.current
+    if (!video) return
+
+    if (active) {
+      video.play().catch(() => {})
+    } else {
+      video.pause()
+    }
+  }, [active])
 
   if (reel.video) {
     return (
       <video
-        ref={ref}
+        ref={(node) => {
+          internalRef.current = node
+          if (typeof forwardedRef === 'function') {
+            forwardedRef(node)
+          } else if (forwardedRef) {
+            forwardedRef.current = node
+          }
+        }}
         src={reel.video}
         poster={poster}
-        muted
+        muted={muted} // 👈 Usamos la propiedad dinámica
         loop={!onEnded}
         playsInline
         autoPlay={active}
